@@ -6,17 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Lock, User, Truck, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock team leaders data - in a real app, this would come from your database
-const mockTeamLeaders = [
-  { id: 1, name: "John Smith", email: "john.smith@dhl.com" },
-  { id: 2, name: "Sarah Johnson", email: "sarah.johnson@dhl.com" },
-  { id: 3, name: "Michael Brown", email: "michael.brown@dhl.com" },
-  { id: 4, name: "Emily Davis", email: "emily.davis@dhl.com" },
-  { id: 5, name: "David Wilson", email: "david.wilson@dhl.com" }
-];
+interface TeamLeader {
+  id: string;
+  name: string;
+  email: string;
+}
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +24,33 @@ const SignUp = () => {
     role: '',
     teamLeader: ''
   });
+  const [teamLeaders, setTeamLeaders] = useState<TeamLeader[]>([]);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Fetch team leaders when component mounts
+  useEffect(() => {
+    fetchTeamLeaders();
+  }, []);
+
+  const fetchTeamLeaders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('role', 'team_leader');
+
+      if (error) {
+        console.error('Error fetching team leaders:', error);
+        return;
+      }
+
+      setTeamLeaders(data || []);
+    } catch (error) {
+      console.error('Error fetching team leaders:', error);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,8 +75,9 @@ const SignUp = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
     // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.role) {
@@ -61,6 +86,7 @@ const SignUp = () => {
         description: "Please fill in all required fields",
         variant: "destructive"
       });
+      setLoading(false);
       return;
     }
 
@@ -70,15 +96,52 @@ const SignUp = () => {
         description: "Staff members must select a team leader",
         variant: "destructive"
       });
+      setLoading(false);
       return;
     }
 
-    // Mock sign up logic
-    toast({
-      title: "Success",
-      description: "Account created successfully!",
-    });
-    console.log('Sign up data:', formData);
+    try {
+      // Sign up the user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            role: formData.role,
+            team_leader_id: formData.role === 'staff' ? formData.teamLeader : null,
+          }
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Account created successfully! Please check your email to verify your account.",
+      });
+
+      // Redirect to sign in page
+      navigate('/signin');
+
+    } catch (error) {
+      console.error('Sign up error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -168,14 +231,20 @@ const SignUp = () => {
                     <SelectValue placeholder="Select your team leader" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                    {mockTeamLeaders.map((leader) => (
-                      <SelectItem key={leader.id} value={leader.id.toString()}>
-                        <div className="flex items-center space-x-2">
-                          <Users className="h-4 w-4 text-red-600" />
-                          <span>{leader.name}</span>
-                        </div>
+                    {teamLeaders.length > 0 ? (
+                      teamLeaders.map((leader) => (
+                        <SelectItem key={leader.id} value={leader.id}>
+                          <div className="flex items-center space-x-2">
+                            <Users className="h-4 w-4 text-red-600" />
+                            <span>{leader.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No team leaders available
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -184,8 +253,9 @@ const SignUp = () => {
             <Button 
               type="submit" 
               className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+              disabled={loading}
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
