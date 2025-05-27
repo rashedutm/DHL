@@ -56,13 +56,34 @@ const SignIn = () => {
         return;
       }
 
+      // Get user profile to determine role and redirect accordingly
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast({
+          title: "Warning",
+          description: "Sign in successful, but could not determine user role",
+        });
+        navigate('/');
+        return;
+      }
+
       toast({
         title: "Success",
         description: "Sign in successful!",
       });
 
-      // Redirect to dashboard or home page
-      navigate('/');
+      // Redirect based on role
+      if (profile.role === 'staff') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
 
     } catch (error) {
       console.error('Sign in error:', error);
