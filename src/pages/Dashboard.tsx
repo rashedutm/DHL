@@ -31,7 +31,7 @@ const taskTypes = [
 ];
 
 const Dashboard = () => {
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -91,7 +91,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -99,14 +99,14 @@ const Dashboard = () => {
     }));
   };
 
-  const handleTaskNameChange = (value) => {
+  const handleTaskNameChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
       taskName: value
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
@@ -136,26 +136,39 @@ const Dashboard = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('task_logs')
-        .insert([
-          {
-            user_id: userProfile.id,
-            task_name: formData.taskName,
-            start_time: formData.startTime,
-            end_time: formData.endTime,
-            volume: parseInt(formData.volume)
-          }
-        ]);
+      // Use a raw SQL query until the types are updated
+      const { error } = await supabase.rpc('insert_task_log', {
+        p_user_id: userProfile.id,
+        p_task_name: formData.taskName,
+        p_start_time: formData.startTime,
+        p_end_time: formData.endTime,
+        p_volume: parseInt(formData.volume)
+      });
 
       if (error) {
         console.error('Error submitting task:', error);
-        toast({
-          title: "Error",
-          description: "Failed to submit task log",
-          variant: "destructive"
-        });
-        return;
+        // If RPC doesn't exist, try direct insert
+        const { error: insertError } = await supabase
+          .from('task_logs' as any)
+          .insert([
+            {
+              user_id: userProfile.id,
+              task_name: formData.taskName,
+              start_time: formData.startTime,
+              end_time: formData.endTime,
+              volume: parseInt(formData.volume)
+            }
+          ]);
+
+        if (insertError) {
+          console.error('Error with direct insert:', insertError);
+          toast({
+            title: "Error",
+            description: "Failed to submit task log",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
       toast({
