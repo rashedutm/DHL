@@ -226,27 +226,27 @@ const SignUp = () => {
             {formData.role === 'staff' && (
               <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-medium text-gray-700">Choose Team Leader</Label>
-                <Select onValueChange={handleTeamLeaderChange} value={formData.teamLeader}>
-                  <SelectTrigger className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500">
-                    <SelectValue placeholder="Select your team leader" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                    {teamLeaders.length > 0 ? (
-                      teamLeaders.map((leader) => (
+                {teamLeaders.length > 0 ? (
+                  <Select onValueChange={handleTeamLeaderChange} value={formData.teamLeader}>
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500">
+                      <SelectValue placeholder="Select your team leader" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                      {teamLeaders.map((leader) => (
                         <SelectItem key={leader.id} value={leader.id}>
                           <div className="flex items-center space-x-2">
                             <Users className="h-4 w-4 text-red-600" />
                             <span>{leader.name}</span>
                           </div>
                         </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="" disabled>
-                        No team leaders available
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="h-12 border border-gray-200 rounded-md flex items-center px-3 bg-gray-50">
+                    <span className="text-gray-500 text-sm">No team leaders available</span>
+                  </div>
+                )}
               </div>
             )}
 
