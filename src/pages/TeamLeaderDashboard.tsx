@@ -15,17 +15,25 @@ interface TaskLog {
   end_time: string;
   volume: number;
   created_at: string;
-  profiles: {
+  user_id: string;
+  profiles?: {
     name: string;
     email: string;
   };
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 const TeamLeaderDashboard = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [taskLogs, setTaskLogs] = useState<TaskLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -80,6 +88,8 @@ const TeamLeaderDashboard = () => {
 
   const loadTeamData = async (teamLeaderId: string) => {
     try {
+      console.log('Loading team data for team leader:', teamLeaderId);
+      
       // Load team members
       const { data: members, error: membersError } = await supabase
         .from('profiles')
@@ -90,17 +100,25 @@ const TeamLeaderDashboard = () => {
       if (membersError) {
         console.error('Error fetching team members:', membersError);
       } else {
+        console.log('Team members found:', members);
         setTeamMembers(members || []);
       }
 
-      // Load task logs from team members
+      // Get team member IDs for task log filtering
+      const teamMemberIds = members?.map(member => member.id) || [];
+      console.log('Team member IDs:', teamMemberIds);
+
+      if (teamMemberIds.length === 0) {
+        console.log('No team members found, skipping task log fetch');
+        setTaskLogs([]);
+        return;
+      }
+
+      // Load task logs from team members using a simpler approach
       const { data: logs, error: logsError } = await supabase
         .from('task_logs')
-        .select(`
-          *,
-          profiles!inner(name, email)
-        `)
-        .eq('profiles.team_leader_id', teamLeaderId)
+        .select('*')
+        .in('user_id', teamMemberIds)
         .order('created_at', { ascending: false });
 
       if (logsError) {
@@ -110,11 +128,36 @@ const TeamLeaderDashboard = () => {
           description: "Failed to load task logs",
           variant: "destructive"
         });
+        setTaskLogs([]);
       } else {
-        setTaskLogs(logs || []);
+        console.log('Task logs found:', logs);
+        
+        // Manually join with profile data
+        const logsWithProfiles = await Promise.all(
+          (logs || []).map(async (log) => {
+            const member = members?.find(m => m.id === log.user_id);
+            return {
+              ...log,
+              profiles: member ? {
+                name: member.name,
+                email: member.email
+              } : {
+                name: 'Unknown',
+                email: 'Unknown'
+              }
+            };
+          })
+        );
+        
+        setTaskLogs(logsWithProfiles);
       }
     } catch (error) {
       console.error('Error loading team data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load team data",
+        variant: "destructive"
+      });
     }
   };
 
@@ -139,6 +182,10 @@ const TeamLeaderDashboard = () => {
     await supabase.auth.signOut();
     navigate('/signin');
   };
+
+  // Calculate totals
+  const totalTasks = taskLogs.length;
+  const totalVolume = taskLogs.reduce((sum, log) => sum + log.volume, 0);
 
   if (loading) {
     return (
@@ -197,7 +244,7 @@ const TeamLeaderDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{taskLogs.length}</div>
+              <div className="text-2xl font-bold text-green-600">{totalTasks}</div>
               <p className="text-sm text-gray-600">Tasks completed</p>
             </CardContent>
           </Card>
@@ -210,9 +257,7 @@ const TeamLeaderDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {taskLogs.reduce((sum, log) => sum + log.volume, 0)}
-              </div>
+              <div className="text-2xl font-bold text-purple-600">{totalVolume}</div>
               <p className="text-sm text-gray-600">Items processed</p>
             </CardContent>
           </Card>
@@ -226,7 +271,7 @@ const TeamLeaderDashboard = () => {
               <span>Team Task Logs</span>
             </CardTitle>
             <CardDescription>
-              Recent task activities from your team members
+              Recent task activities from your team members ({taskLogs.length} tasks found)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -234,7 +279,11 @@ const TeamLeaderDashboard = () => {
               <div className="text-center py-8">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No task logs found</p>
-                <p className="text-sm text-gray-500">Your team members haven't logged any tasks yet</p>
+                <p className="text-sm text-gray-500">
+                  {teamMembers.length === 0 
+                    ? "No team members assigned to you yet" 
+                    : "Your team members haven't logged any tasks yet"}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -255,8 +304,8 @@ const TeamLeaderDashboard = () => {
                       <TableRow key={log.id}>
                         <TableCell className="font-medium">
                           <div>
-                            <div className="font-semibold">{log.profiles.name}</div>
-                            <div className="text-sm text-gray-500">{log.profiles.email}</div>
+                            <div className="font-semibold">{log.profiles?.name || 'Unknown'}</div>
+                            <div className="text-sm text-gray-500">{log.profiles?.email || 'Unknown'}</div>
                           </div>
                         </TableCell>
                         <TableCell>{log.task_name}</TableCell>
