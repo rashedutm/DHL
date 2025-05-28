@@ -99,6 +99,7 @@ const TeamLeaderDashboard = () => {
 
       if (membersError) {
         console.error('Error fetching team members:', membersError);
+        setTeamMembers([]);
       } else {
         console.log('Team members found:', members);
         setTeamMembers(members || []);
@@ -114,7 +115,7 @@ const TeamLeaderDashboard = () => {
         return;
       }
 
-      // Load task logs from team members using a simpler approach
+      // Load task logs from team members
       const { data: logs, error: logsError } = await supabase
         .from('task_logs')
         .select('*')
@@ -133,21 +134,19 @@ const TeamLeaderDashboard = () => {
         console.log('Task logs found:', logs);
         
         // Manually join with profile data
-        const logsWithProfiles = await Promise.all(
-          (logs || []).map(async (log) => {
-            const member = members?.find(m => m.id === log.user_id);
-            return {
-              ...log,
-              profiles: member ? {
-                name: member.name,
-                email: member.email
-              } : {
-                name: 'Unknown',
-                email: 'Unknown'
-              }
-            };
-          })
-        );
+        const logsWithProfiles = (logs || []).map((log) => {
+          const member = members?.find(m => m.id === log.user_id);
+          return {
+            ...log,
+            profiles: member ? {
+              name: member.name,
+              email: member.email
+            } : {
+              name: 'Unknown',
+              email: 'Unknown'
+            }
+          };
+        });
         
         setTaskLogs(logsWithProfiles);
       }
