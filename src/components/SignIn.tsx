@@ -81,6 +81,8 @@ const SignIn = () => {
       // Redirect based on role
       if (profile.role === 'staff') {
         navigate('/dashboard');
+      } else if (profile.role === 'team_leader') {
+        navigate('/team-leader-dashboard');
       } else {
         navigate('/');
       }
