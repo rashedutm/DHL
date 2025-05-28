@@ -83,6 +83,8 @@ const SignIn = () => {
         navigate('/dashboard');
       } else if (profile.role === 'team_leader') {
         navigate('/team-leader-dashboard');
+      } else if (profile.role === 'manager') {
+        navigate('/manager-dashboard');
       } else {
         navigate('/');
       }

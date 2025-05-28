@@ -14,6 +14,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          manager_id: string | null
           name: string
           role: string
           team_leader_id: string | null
@@ -23,6 +24,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id: string
+          manager_id?: string | null
           name: string
           role: string
           team_leader_id?: string | null
@@ -32,12 +34,20 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          manager_id?: string | null
           name?: string
           role?: string
           team_leader_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_team_leader_id_fkey"
             columns: ["team_leader_id"]
