@@ -1,14 +1,27 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, User, Truck, Users } from "lucide-react";
+import { Mail, Lock, User, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+// DHL Logo Component
+const DHLLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <defs>
+      <style>
+        {`.dhl-bg { fill: #ffcc00; }
+         .dhl-text { fill: #dd0000; font-family: Arial, sans-serif; font-weight: bold; font-size: 28px; }`}
+      </style>
+    </defs>
+    <circle cx="50" cy="50" r="50" className="dhl-bg"/>
+    <text x="50" y="60" textAnchor="middle" className="dhl-text">DHL</text>
+  </svg>
+);
 
 interface TeamLeader {
   id: string;
@@ -129,6 +142,28 @@ const SignUp = () => {
         description: "Account created successfully! Please check your email to verify your account.",
       });
 
+      // Insert into profiles table
+      if (data?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              name: formData.name,
+              email: formData.email,
+              role: formData.role,
+              team_leader_id: formData.role === 'staff' ? formData.teamLeader : null
+            }
+          ]);
+        if (profileError) {
+          toast({
+            title: "Profile Error",
+            description: profileError.message,
+            variant: "destructive"
+          });
+        }
+      }
+
       // Redirect to sign in page
       navigate('/signin');
 
@@ -145,21 +180,19 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-yellow-50 p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-200 via-yellow-300 to-amber-200 p-4">
+      <Card className="w-full max-w-md shadow-2xl border-2 border-red-600 bg-white">
         <CardHeader className="text-center pb-8">
           <div className="flex justify-center mb-4">
-            <div className="bg-red-600 p-3 rounded-full">
-              <Truck className="h-8 w-8 text-white" />
-            </div>
+            <DHLLogo className="h-16 w-16" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">DHL ATT System</CardTitle>
-          <CardDescription className="text-gray-600">Create your account</CardDescription>
+          <CardTitle className="text-2xl font-bold text-red-600">DHL ATT System</CardTitle>
+          <CardDescription className="text-red-700">Create your account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+              <Label htmlFor="name" className="text-sm font-medium text-red-700">Full Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -176,7 +209,7 @@ const SignUp = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-red-700">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -193,7 +226,7 @@ const SignUp = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-red-700">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -210,7 +243,7 @@ const SignUp = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Select Role</Label>
+              <Label className="text-sm font-medium text-red-700">Select Role</Label>
               <Select onValueChange={handleRoleChange} value={formData.role}>
                 <SelectTrigger className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500">
                   <SelectValue placeholder="Choose your role" />
@@ -225,7 +258,7 @@ const SignUp = () => {
 
             {formData.role === 'staff' && (
               <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                <Label className="text-sm font-medium text-gray-700">Choose Team Leader</Label>
+                <Label className="text-sm font-medium text-red-700">Choose Team Leader</Label>
                 {teamLeaders.length > 0 ? (
                   <Select onValueChange={handleTeamLeaderChange} value={formData.teamLeader}>
                     <SelectTrigger className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500">
@@ -260,7 +293,7 @@ const SignUp = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-red-700">
               Already have an account?{' '}
               <Link 
                 to="/signin" 

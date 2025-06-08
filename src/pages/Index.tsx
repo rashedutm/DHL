@@ -2,19 +2,60 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, Users, Shield, BarChart3 } from "lucide-react";
+import { Users, Shield, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
+
+// Clock Component for ATT System
+const AttendanceClock = ({ className = "h-6 w-6" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <defs>
+      <style>
+        {`.clock-face { fill: #ffcc00; stroke: #dd0000; stroke-width: 3; }
+         .clock-numbers { fill: #dd0000; font-family: Arial, sans-serif; font-weight: bold; font-size: 8px; }
+         .clock-hands { stroke: #dd0000; stroke-width: 2; stroke-linecap: round; }
+         .clock-center { fill: #dd0000; }
+         .clock-ticks { stroke: #dd0000; stroke-width: 1; }`}
+      </style>
+    </defs>
+    
+    {/* Clock face */}
+    <circle cx="50" cy="50" r="45" className="clock-face"/>
+    
+    {/* Hour markers */}
+    <line x1="50" y1="10" x2="50" y2="20" className="clock-ticks"/>
+    <line x1="85" y1="35" x2="75" y2="40" className="clock-ticks"/>
+    <line x1="90" y1="50" x2="80" y2="50" className="clock-ticks"/>
+    <line x1="85" y1="65" x2="75" y2="60" className="clock-ticks"/>
+    <line x1="50" y1="90" x2="50" y2="80" className="clock-ticks"/>
+    <line x1="15" y1="65" x2="25" y2="60" className="clock-ticks"/>
+    <line x1="10" y1="50" x2="20" y2="50" className="clock-ticks"/>
+    <line x1="15" y1="35" x2="25" y2="40" className="clock-ticks"/>
+    
+    {/* Key numbers */}
+    <text x="50" y="18" textAnchor="middle" className="clock-numbers">12</text>
+    <text x="82" y="55" textAnchor="middle" className="clock-numbers">3</text>
+    <text x="50" y="87" textAnchor="middle" className="clock-numbers">6</text>
+    <text x="18" y="55" textAnchor="middle" className="clock-numbers">9</text>
+    
+    {/* Clock hands - showing 9:00 (work start time) */}
+    <line x1="50" y1="50" x2="50" y2="30" className="clock-hands"/>  {/* Hour hand */}
+    <line x1="50" y1="50" x2="20" y2="50" className="clock-hands"/>  {/* Minute hand */}
+    
+    {/* Center dot */}
+    <circle cx="50" cy="50" r="3" className="clock-center"/>
+  </svg>
+);
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-yellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-200">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="bg-red-600 p-2 rounded-lg">
-                <Truck className="h-6 w-6 text-white" />
+              <div className="p-1 rounded-lg">
+                <AttendanceClock className="h-8 w-8" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">DHL ATT System</h1>
@@ -23,12 +64,12 @@ const Index = () => {
             </div>
             <div className="flex space-x-3">
               <Link to="/signin">
-                <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-white">
                   Sign In
                 </Button>
               </Link>
               <Link to="/signup">
-                <Button className="bg-red-600 hover:bg-red-700 text-white">
+                <Button className="bg-red-600 hover:bg-red-700 text-white shadow-lg">
                   Sign Up
                 </Button>
               </Link>
@@ -125,8 +166,8 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex justify-center items-center space-x-3 mb-4">
-              <div className="bg-red-600 p-2 rounded-lg">
-                <Truck className="h-6 w-6 text-white" />
+              <div className="p-1 rounded-lg">
+                <AttendanceClock className="h-8 w-8" />
               </div>
               <span className="text-xl font-bold">DHL ATT System</span>
             </div>
